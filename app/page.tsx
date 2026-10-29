@@ -1,190 +1,261 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-const stats = [
-  { label: 'Utilisateurs actifs', value: '18.4K' },
-  { label: 'Posts partagés', value: '249K' },
-  { label: 'IA générée', value: '92%' },
-];
+type Todo = {
+  id: number;
+  text: string;
+  done: boolean;
+  createdAt: number;
+};
 
-const features = [
-  'Flux social mobile-first',
-  'Stories, reels et publications',
-  'Assistant IA LMGUAF AI',
-  'Authentification sécurisée',
-  'Messages privés protégés',
-  'Dashboard admin dédié',
-];
+const STORAGE_KEY = 'lmguaf-todos';
 
 export default function HomePage() {
-  const [joke, setJoke] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [input, setInput] = useState('');
+  const [hydrated, setHydrated] = useState(false);
 
-  const fetchJoke = useCallback(async () => {
+  useEffect(() => {
     try {
-      setLoading(true);
-      setError('');
-
-      const response = await fetch('/api/joke', { method: 'GET', cache: 'no-store' });
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Impossible de récupérer une blague.');
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as Todo[];
+        if (Array.isArray(parsed)) {
+          setTodos(parsed);
+        }
       }
-
-      setJoke(data.joke || 'Aucune blague disponible pour le moment.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur inconnue est survenue.');
-      setJoke('');
+    } catch {
+      setTodos([]);
     } finally {
-      setLoading(false);
+      setHydrated(true);
     }
   }, []);
 
   useEffect(() => {
-    fetchJoke();
-  }, [fetchJoke]);
+    if (!hydrated) return;
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+  }, [todos, hydrated]);
+
+  const remaining = useMemo(
+    () => todos.filter((todo) => !todo.done).length,
+    [todos]
+  );
+
+  const completed = useMemo(
+    () => todos.filter((todo) => todo.done).length,
+    [todos]
+  );
+
+  function addTodo() {
+    const value = input.trim();
+    if (!value) return;
+
+    const newTodo: Todo = {
+      id: Date.now() + Math.random(),
+      text: value,
+      done: false,
+      createdAt: Date.now(),
+    };
+
+    setTodos((prev) => [newTodo, ...prev]);
+    setInput('');
+  }
+
+  function toggleTodo(id: number) {
+    setTodos((prev) =>
+      prev.map((todo) =>
+        todo.id === id ? { ...todo, done: !todo.done } : todo
+      )
+    );
+  }
+
+  function removeTodo(id: number) {
+    setTodos((prev) => prev.filter((todo) => todo.id !== id));
+  }
+
+  function clearCompleted() {
+    setTodos((prev) => prev.filter((todo) => !todo.done));
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    addTodo();
+  }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <header className="mb-10 flex items-center justify-between rounded-full border border-white/10 bg-white/5 px-5 py-3 backdrop-blur-sm">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 font-black text-lg text-white">
-              L
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-violet-300">LMGUAF</p>
-              <p className="text-sm text-slate-300">Connecte-toi. Partage. Crée. Évolue.</p>
-            </div>
-          </div>
-
-          <nav className="hidden items-center gap-6 text-sm text-slate-300 md:flex">
-            <a href="#features" className="transition hover:text-white">Fonctionnalités</a>
-            <a href="#ai" className="transition hover:text-white">IA</a>
-            <a href="#joke" className="transition hover:text-white">Blague</a>
-          </nav>
-        </header>
-
-        <section className="grid items-center gap-8 pb-12 pt-6 lg:grid-cols-[1.1fr_0.9fr]">
+    <main
+      style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #0f172a 0%, #111827 30%, #1e1b4b 100%)',
+        color: '#f8fafc',
+        display: 'grid',
+        placeItems: 'center',
+        padding: '24px',
+        fontFamily: 'Arial, sans-serif',
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          maxWidth: '760px',
+          background: 'rgba(15, 23, 42, 0.8)',
+          border: '1px solid rgba(148, 163, 184, 0.2)',
+          borderRadius: '28px',
+          boxShadow: '0 30px 80px rgba(15, 23, 42, 0.45)',
+          padding: '28px',
+          backdropFilter: 'blur(10px)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
           <div>
-            <div className="mb-5 inline-flex rounded-full border border-violet-400/30 bg-violet-500/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-violet-200">
-              Social media modernisé
-            </div>
-
-            <h1 className="max-w-xl text-4xl font-black tracking-tight text-white sm:text-5xl lg:text-6xl">
-              Un réseau social premium avec IA intégrée.
-            </h1>
-
-            <p className="mt-5 max-w-xl text-lg text-slate-300">
-              LMGUAF réunit publication, stories, messages, reels, inspirations créatives et un assistant intelligent pour aider les créateurs à produire davantage.
+            <p style={{ margin: 0, fontSize: '12px', letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c4b5fd', fontWeight: 700 }}>
+              LMGUAF
             </p>
+            <h1 style={{ margin: '10px 0 0', fontSize: 'clamp(2rem, 5vw, 3rem)', lineHeight: 1.1 }}>
+              To-do list
+            </h1>
+          </div>
 
-            <div className="mt-8 flex flex-wrap gap-4">
-              <a
-                href="#features"
-                className="rounded-full bg-gradient-to-r from-violet-500 to-cyan-400 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:scale-[1.02]"
+          <div
+            style={{
+              display: 'flex',
+              gap: '12px',
+              alignItems: 'center',
+              borderRadius: '999px',
+              background: 'rgba(99, 102, 241, 0.18)',
+              border: '1px solid rgba(165, 180, 252, 0.25)',
+              padding: '10px 14px',
+              fontSize: '0.9rem',
+              color: '#e0e7ff',
+            }}
+          >
+            <span>{remaining} restantes</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            type="text"
+            placeholder="Ajouter une tâche..."
+            style={{
+              flex: 1,
+              borderRadius: '16px',
+              border: '1px solid rgba(148, 163, 184, 0.25)',
+              background: 'rgba(15, 23, 42, 0.8)',
+              color: '#f8fafc',
+              padding: '16px 18px',
+              fontSize: '1rem',
+              outline: 'none',
+            }}
+          />
+          <button
+            type="submit"
+            style={{
+              border: 'none',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #22d3ee 100%)',
+              color: '#fff',
+              fontWeight: 700,
+              padding: '0 18px',
+              cursor: 'pointer',
+            }}
+          >
+            Ajouter
+          </button>
+        </form>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <p style={{ margin: 0, color: '#cbd5e1', fontSize: '0.95rem' }}>
+            {todos.length} tâche(s) au total
+          </p>
+
+          {completed > 0 && (
+            <button
+              onClick={clearCompleted}
+              style={{
+                border: '1px solid rgba(148, 163, 184, 0.4)',
+                background: 'transparent',
+                color: '#e2e8f0',
+                borderRadius: '999px',
+                padding: '8px 12px',
+                cursor: 'pointer',
+              }}
+            >
+              Supprimer terminées
+            </button>
+          )}
+        </div>
+
+        <div style={{ display: 'grid', gap: '12px' }}>
+          {todos.length === 0 ? (
+            <div
+              style={{
+                border: '1px dashed rgba(148, 163, 184, 0.4)',
+                borderRadius: '18px',
+                padding: '28px',
+                textAlign: 'center',
+                color: '#cbd5e1',
+                background: 'rgba(15, 23, 42, 0.5)',
+              }}
+            >
+              Aucune tâche enregistrée pour le moment.
+            </div>
+          ) : (
+            todos.map((todo) => (
+              <div
+                key={todo.id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  padding: '14px 16px',
+                  borderRadius: '18px',
+                  background: todo.done ? 'rgba(34, 197, 94, 0.12)' : 'rgba(15, 23, 42, 0.6)',
+                  border: todo.done ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(148, 163, 184, 0.18)',
+                }}
               >
-                Explorer les fonctionnalités
-              </a>
-              <a
-                href="#joke"
-                className="rounded-full border border-slate-700 bg-slate-900/70 px-6 py-3 text-sm font-semibold text-slate-200 transition hover:border-violet-400 hover:text-white"
-              >
-                Voir une blague
-              </a>
-            </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                  <input
+                    type="checkbox"
+                    checked={todo.done}
+                    onChange={() => toggleTodo(todo.id)}
+                    style={{ width: '18px', height: '18px', accentColor: '#22c55e' }}
+                  />
 
-            <div className="mt-8 grid gap-4 sm:grid-cols-3">
-              {stats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-2xl font-black text-white">{stat.value}</p>
-                  <p className="mt-1 text-xs uppercase tracking-[0.15em] text-slate-400">{stat.label}</p>
+                  <span
+                    style={{
+                      flex: 1,
+                      textDecoration: todo.done ? 'line-through' : 'none',
+                      color: todo.done ? '#a7f3d0' : '#f8fafc',
+                      fontSize: '1rem',
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {todo.text}
+                  </span>
                 </div>
-              ))}
-            </div>
-          </div>
 
-          <div className="rounded-[30px] border border-white/10 bg-white/5 p-4 shadow-2xl shadow-violet-900/20 backdrop-blur-md">
-            <div className="rounded-[24px] bg-gradient-to-br from-violet-600 via-indigo-500 to-cyan-500 p-6">
-              <div className="flex items-center justify-between">
-                <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-white/90">
-                  Live
-                </span>
-                <span className="text-sm text-white/80">LMGUAF AI</span>
+                <button
+                  onClick={() => removeTodo(todo.id)}
+                  style={{
+                    border: 'none',
+                    background: 'rgba(239, 68, 68, 0.12)',
+                    color: '#fecaca',
+                    borderRadius: '10px',
+                    padding: '8px 10px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Supprimer
+                </button>
               </div>
-
-              <div className="mt-8 space-y-4">
-                <div className="rounded-2xl bg-black/15 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-violet-100">Suggestion</p>
-                  <p className="mt-2 text-xl font-bold text-white">Rédiger une légende pour une publication photo</p>
-                </div>
-                <div className="rounded-2xl bg-black/15 p-4">
-                  <p className="text-xs uppercase tracking-[0.2em] text-cyan-100">Calendrier</p>
-                  <p className="mt-2 text-xl font-bold text-white">3 idées de reels pour ce mois</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="features" className="py-10">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-[0.25em] text-violet-300">Ce que tu peux faire</p>
-              <h2 className="mt-2 text-3xl font-black text-white">Une base solide pour une vraie plateforme sociale</h2>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {features.map((feature) => (
-              <div key={feature} className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-cyan-400 text-sm font-bold text-white">
-                  ✓
-                </div>
-                <p className="text-lg font-semibold text-white">{feature}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section id="ai" className="py-10">
-          <div className="rounded-[28px] border border-violet-500/30 bg-gradient-to-br from-violet-600/20 via-slate-900 to-cyan-500/10 p-6 md:p-8">
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-violet-200">LMGUAF AI</p>
-                <h3 className="mt-3 text-3xl font-black text-white">Un assistant intelligent, but sécurisé.</h3>
-              </div>
-
-              <div className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-200">
-                Appels serveur uniquement • clé API non exposée
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="joke" className="py-10">
-          <div className="rounded-[30px] border border-white/10 bg-slate-900/80 p-6 md:p-8">
-            <div className="mb-6 flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.22em] text-cyan-300">Mini feature</p>
-                <h3 className="mt-2 text-2xl font-black text-white">Générateur de blagues</h3>
-              </div>
-              <button
-                onClick={fetchJoke}
-                className="rounded-full bg-gradient-to-r from-cyan-400 to-violet-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:scale-[1.02]"
-              >
-                {loading ? 'Chargement...' : 'Nouvelle blague'}
-              </button>
-            </div>
-
-            <div className="min-h-[140px] rounded-2xl border border-white/10 bg-black/20 p-5 text-lg leading-8 text-slate-100">
-              {loading ? 'Chargement d’une blague...' : (joke || error || 'Aucune blague disponible pour le moment.')}
-            </div>
-          </div>
-        </section>
+            ))
+          )}
+        </div>
       </div>
     </main>
   );
