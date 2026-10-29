@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f8f9fc;
+  --foreground: #171923;
+  --surface: rgba(255, 255, 255, 0.72);
+  --brand: #6c5ce7;
+  --brand-secondary: #00d2ff;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans), sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display), sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+@layer components {
+  .container-card {
+    @apply rounded-2xl border border-slate-200/80 bg-white/80 shadow-soft backdrop-blur;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full border border-brand-200 bg-brand-50 px-3 py-1 text-xs font-medium text-brand-700;
+  }
+
+  .page-header {
+    @apply mb-6 flex items-center justify-between gap-4;
+  }
+}
