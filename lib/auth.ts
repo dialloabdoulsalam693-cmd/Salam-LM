@@ -1,15 +1,7 @@
-import type { NextRequest, NextResponse } from 'next/server';
-
-export function getAuthenticatedUserId(request: NextRequest) {
-  const token = request.cookies.get('sb-access-token')?.value;
-  if (!token) return null;
-  return token.slice(0, 12) || null;
+export function normalizeUsername(value: string) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9._-]/g, '').slice(0, 30);
 }
 
-export function requireAuth(request: NextRequest, response: NextResponse) {
-  const userId = getAuthenticatedUserId(request);
-  if (!userId) {
-    return response;
-  }
-  return null;
+export function isValidPassword(password: string) {
+  return password.length >= 8;
 }
